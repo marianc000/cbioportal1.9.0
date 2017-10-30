@@ -125,21 +125,25 @@ function ServicePresenter(baseURL, markdownDocumentation){
 
     // fetch an external page
     function fetchExternalPage(sourceURL){
+//        $.ajax({
+//            type: "GET",
+//            url: "api-legacy/getexternalpage.json",
+//            data: {sourceURL: getFullURL(sourceURL)},
+//            dataType: "json"
+//        })
+console.log(">fetchExternalPage: "+sourceURL);
         $.ajax({
             type: "GET",
-            url: "api-legacy/getexternalpage.json",
-            data: {sourceURL: getFullURL(sourceURL)},
-            dataType: "json"
+            url: getFullURL(sourceURL) 
         })
         .done(function(result){
-            console.log(new Date() + ': successfully retrieved the markdownpage!');
-            // the resultPage is stored in result.response
-            var resultPage = result.response;
+            var resultPage = result;
+             console.log('successfully retrieved the markdownpage: '+result.slice( 0, 100 ));
             // check whether it's a markdown page. If so, convert it; otherwise use the results as the htmlPage
-            if(markdownDocumentation==='true') {
+            if(markdownDocumentation==='true') {  
                 htmlPage = markdown2html(resultPage);
             }
-            else {
+            else {  
                 htmlPage = resultPage;
             }
             replaceImageTags();
