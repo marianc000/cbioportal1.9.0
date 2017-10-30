@@ -1,0 +1,68 @@
+package org.cbioportal.model;
+
+public class ClinicalData extends UniqueKeyBase {
+
+    private Integer internalId;
+    private String sampleId;
+    private String patientId;
+    private String studyId;
+    private String attrId;
+    private String attrValue;
+    private ClinicalAttribute clinicalAttribute;
+
+    public Integer getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Integer internalId) {
+        this.internalId = internalId;
+    }
+
+    public String getSampleId() {
+        return sampleId;
+    }
+
+    public void setSampleId(String sampleId) {
+        this.sampleId = sampleId;
+    }
+
+    public String getPatientId() {
+        return patientId;
+    }
+
+    public void setPatientId(String patientId) {
+        this.patientId = patientId;
+    }
+
+    public String getStudyId() {
+        return studyId;
+    }
+
+    public void setStudyId(String studyId) {
+        this.studyId = studyId;
+    }
+
+    public String getAttrId() {
+        return attrId;
+    }
+
+    public void setAttrId(String attrId) {
+        this.attrId = attrId;
+    }
+
+    public String getAttrValue() {
+        return attrValue;
+    }
+
+    public void setAttrValue(String attrValue) {
+        this.attrValue = attrValue;
+    }
+
+    public ClinicalAttribute getClinicalAttribute() {
+        return clinicalAttribute;
+    }
+
+    public void setClinicalAttribute(ClinicalAttribute clinicalAttribute) {
+        this.clinicalAttribute = clinicalAttribute;
+    }
+}
