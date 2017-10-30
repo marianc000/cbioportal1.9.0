@@ -55,38 +55,40 @@ import java.util.Map;
 public class ProxyController
 {
 	
-  private String hotspotsURL;
-  @Value("${hotspots.url:http://cancerhotspots.org/api/}")
-  public void setHotspotsURL(String property) { this.hotspotsURL = property; }
-  
-  private String bitlyURL;
-  @Value("${bitly.url}")
-  public void setBitlyURL(String property) { this.bitlyURL = property; }
+ // private String hotspotsURL;
+ //                        http://cancerhotspots.org/api/
+//  @Value("${hotspots.url:http://cancerhotspots.org/api/}")
+//  public void setHotspotsURL(String property) { this.hotspotsURL = property; }
+//  
+//  private String bitlyURL;
+ // @Value("${bitly.url}")
+//  public void setBitlyURL(String property) { this.bitlyURL = property; }
 
   private String sessionServiceURL;
   @Value("${session.service.url:''}") // default is empty string
   public void setSessionServiceURL(String property) { this.sessionServiceURL = property; }
 
-  private String oncokbApiURL;
-  @Value("${oncokb.api.url:http://oncokb.org/legacy-api/}")
-  public void setOncoKBURL(String property) {
-      // The annotation above can only prevent oncokb.api.url is not present in the property file.
-      // If user set the  oncokb.api.url to empty, we should also use the default OncoKB URL.
-      if (property.isEmpty()) {
-          property = "http://oncokb.org/legacy-api/";
-      }
-      this.oncokbApiURL = property;
-  }
-    
-    private Boolean enableOncokb;
+//  private String oncokbApiURL;
 
-    @Value("${show.oncokb:true}")
-    public void setEnableOncokb(Boolean property) {
-        if(property == null) {
-            property = true;
-        }
-        this.enableOncokb = property;
-    }
+//  @Value("${oncokb.api.url:http://oncokb.org/legacy-api/}")
+//  public void setOncoKBURL(String property) {
+//      // The annotation above can only prevent oncokb.api.url is not present in the property file.
+//      // If user set the  oncokb.api.url to empty, we should also use the default OncoKB URL.
+//      if (property.isEmpty()) {
+//          property = "http://oncokb.org/legacy-api/";
+//      }
+    //  this.oncokbApiURL = property;
+//  }
+    
+//    private Boolean enableOncokb;
+//
+//    @Value("${show.oncokb:true}")
+//    public void setEnableOncokb(Boolean property) {
+//        if(property == null) {
+//            property = true;
+//        }
+//        this.enableOncokb = property;
+//    }
   // This is a general proxy for future use.
   // Please modify and improve it as needed with your best expertise. The author does not have fully understanding
   // of JAVA proxy when creating this proxy.
@@ -98,18 +100,18 @@ public class ProxyController
   {
       Map<String, String> pathToUrl = new HashMap<>();
       
-      pathToUrl.put("bitly", bitlyURL);
-      pathToUrl.put("cancerHotSpots", hotspotsURL + "hotspots/single/");
+      pathToUrl.put("bitly", "http://api.bit.ly/shorten?login=[bitly.user]&apiKey=[bitly.apiKey]&");
+      pathToUrl.put("cancerHotSpots",   "http://cancerhotspots.org/api/hotspots/single/");
       pathToUrl.put("3dHotspots", "http://3dhotspots.org/3d/api/hotspots/3d");
-      pathToUrl.put("oncokbAccess", oncokbApiURL + "access");
-      pathToUrl.put("oncokbSummary", oncokbApiURL + "summary.json");
+      pathToUrl.put("oncokbAccess", "http://oncokb.org/legacy-api/access");
+      pathToUrl.put("oncokbSummary", "http://oncokb.org/legacy-api/summary.json");
 
       String URL = pathToUrl.get(path) == null ? "" : pathToUrl.get(path);
         
-        if(path != null && StringUtils.startsWithIgnoreCase(path, "oncokb") && !enableOncokb) {
-            response.sendError(403, "OncoKB service is disabled.");
-            return "";
-        }
+//        if(path != null && StringUtils.startsWithIgnoreCase(path, "oncokb") && !enableOncokb) {
+//            response.sendError(403, "OncoKB service is disabled.");
+//            return "";
+//        }
         
         //If request method is GET, include query string
         if (method.equals(HttpMethod.GET) && request.getQueryString() != null){
@@ -122,31 +124,31 @@ public class ProxyController
     @RequestMapping(value="/oncokbSummary", method = RequestMethod.POST)
     public @ResponseBody String getOncoKBSummary(@RequestBody String body, HttpMethod method,
                                                   HttpServletRequest request, HttpServletResponse response) throws URISyntaxException, IOException {
-        if(!enableOncokb) {
-            response.sendError(403, "OncoKB service is disabled.");
-            return "";
-        }
-        return respProxy(oncokbApiURL + "summary.json", method, body, response);
+//        if(!enableOncokb) {
+//            response.sendError(403, "OncoKB service is disabled.");
+//            return "";
+//        }
+        return respProxy("http://oncokb.org/legacy-api/" + "summary.json", method, body, response);
     }
 
     @RequestMapping(value="/oncokbEvidence", method = RequestMethod.POST)
     public @ResponseBody String getOncoKBEvidence(@RequestBody JSONObject body, HttpMethod method,
                                           HttpServletRequest request, HttpServletResponse response) throws URISyntaxException, IOException {
-        if(!enableOncokb) {
-            response.sendError(403, "OncoKB service is disabled.");
-            return "";
-        }
-        return respProxy(oncokbApiURL + "evidence.json", method, body, response);
+//        if(!enableOncokb) {
+//            response.sendError(403, "OncoKB service is disabled.");
+//            return "";
+//        }
+        return respProxy("http://oncokb.org/legacy-api/" + "evidence.json", method, body, response);
     }
 
   @RequestMapping(value="/oncokb", method = RequestMethod.POST)
   public @ResponseBody String getOncoKB(@RequestBody JSONObject body, HttpMethod method,
                                           HttpServletRequest request, HttpServletResponse response) throws URISyntaxException, IOException {
-      if(!enableOncokb) {
-          response.sendError(403, "OncoKB service is disabled.");
-          return "";
-      }
-      return respProxy(oncokbApiURL + "indicator.json", method, body, response);
+//      if(!enableOncokb) {
+//          response.sendError(403, "OncoKB service is disabled.");
+//          return "";
+//      }
+      return respProxy("http://oncokb.org/legacy-api/indicator.json", method, body, response);
   }
   
      private String respProxy(String url, HttpMethod method, Object body, HttpServletResponse response) throws IOException {
@@ -169,7 +171,7 @@ public class ProxyController
   public @ResponseBody String getBitlyURL(@RequestBody String body, HttpMethod method,
                                           HttpServletRequest request, HttpServletResponse response) throws URISyntaxException, IOException
   {
-      return respProxy(bitlyURL + request.getQueryString(), method, body, response);
+      return respProxy("http://api.bit.ly/shorten?login=[bitly.user]&apiKey=[bitly.apiKey]&" + request.getQueryString(), method, body, response);
   }
 
   @RequestMapping(value="/session-service/{type}", method = RequestMethod.POST)

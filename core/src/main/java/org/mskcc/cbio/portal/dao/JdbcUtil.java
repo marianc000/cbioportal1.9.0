@@ -77,7 +77,7 @@ public class JdbcUtil {
         String database = dbProperties.getDbName();
         String url ="jdbc:mysql://" + host + "/" + database +
                         "?user=" + userName + "&password=" + password +
-                        "&zeroDateTimeBehavior=convertToNull";
+                        "&zeroDateTimeBehavior=convertToNull&useSSL=false&profileSQL=true&logger=com.mysql.jdbc.log.MyStandardLogger";
         //  Set up poolable data source
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setDriverClassName("com.mysql.jdbc.Driver");

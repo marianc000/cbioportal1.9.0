@@ -96,7 +96,7 @@
             </configuration>
           </execution>
           <!-- unpack cbioportal-frontend -->
-          <execution>
+<!--          <execution>
             <id>unpack</id>
             <phase>prepare-package</phase>
             <goals>
@@ -115,7 +115,7 @@
                 </artifactItem>
               </artifactItems>
             </configuration>
-          </execution>
+          </execution>-->
         </executions>
       </plugin>
       <!-- war plugin config -->

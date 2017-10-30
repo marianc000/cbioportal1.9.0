@@ -36,7 +36,7 @@
               <outputDirectory>${project.build.directory}/classes</outputDirectory>
               <resources>
                 <resource>
-                  <directory>${PORTAL_HOME}/src/main/resources</directory>
+                  <directory>../src/main/resources</directory>
                   <filtering>true</filtering>
                   <includes>
                     <include>**/*.properties</include>

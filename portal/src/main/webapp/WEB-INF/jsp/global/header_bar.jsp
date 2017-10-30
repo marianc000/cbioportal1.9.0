@@ -35,16 +35,16 @@
 <%@ taglib prefix="s" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <%
-    String principal = "";
+    String principal = GlobalProperties.getAuthenticatedUserName();
     String authenticationMethod = GlobalProperties.authenticationMethod();
     pageContext.setAttribute("authenticationMethod", authenticationMethod);
-    if (authenticationMethod.equals("openid") || authenticationMethod.equals("ldap")) {
-        principal = "principal.name";
-    }
-    else if (authenticationMethod.equals("googleplus") || authenticationMethod.equals("saml") || authenticationMethod.equals("ad")) {
-        principal = "principal.username";
-    }
-    pageContext.setAttribute("principal", principal);
+//    if (authenticationMethod.equals("openid") || authenticationMethod.equals("ldap")) {
+//        principal = "principal.name";
+//    }
+//    else if (authenticationMethod.equals("googleplus") || authenticationMethod.equals("saml") || authenticationMethod.equals("ad")) {
+//        principal = "principal.username";
+//    }
+//    pageContext.setAttribute("principal", principal);
 %>
 <%-- Calling static methods is not supported in all versions of EL without
      explicitly defining a function in an external taglib XML file. Using
@@ -138,15 +138,10 @@
             <div class="userControls">
             <span class="username"><i class="fa fa-cog" aria-hidden="true"></i></span>&nbsp;
                 
-                <div class="identity">Logged in as <sec:authentication property="${principal}" />&nbsp;|&nbsp;
-                <c:choose>
-                    <c:when test="${authenticationMethod == 'saml'}">
-                        <a href="${samlLogoutUrl}">Sign out</a>
-                    </c:when>
-                    <c:otherwise>
+            <div class="identity">Logged in as <span class="username"><%=principal%></span>&nbsp;|&nbsp;
+ 
                         <a href="j_spring_security_logout">Sign out</a>
-                    </c:otherwise>
-                </c:choose>
+  
                 &nbsp;&nbsp;
                 <i class="fa fa-cog" aria-hidden="true"></i>
                 </div>

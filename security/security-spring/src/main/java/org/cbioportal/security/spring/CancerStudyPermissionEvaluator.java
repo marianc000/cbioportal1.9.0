@@ -13,7 +13,7 @@
  * Center has been advised of the possibility of such damage.
  */
 
-/*
+ /*
  * This file is part of cBioPortal.
  *
  * cBioPortal is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 package org.cbioportal.security.spring;
 
@@ -93,16 +93,16 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
 
     private static String PUBLIC_CANCER_STUDIES_GROUP;
     @Value("${always_show_study_group:}")
-    private void setPublicCancerStudiesGroup(String property) { 
-        PUBLIC_CANCER_STUDIES_GROUP = property; 
+    private void setPublicCancerStudiesGroup(String property) {
+        PUBLIC_CANCER_STUDIES_GROUP = property;
         if (log.isDebugEnabled()) {
             log.debug("setPublicCancerStudiesGroup(), always_show_study_group = " + ((property == null) ? "null" : property));
         }
         if (property != null && property.trim().isEmpty()) {
             PUBLIC_CANCER_STUDIES_GROUP = null;
-        } 
+        }
     }
- 
+
     private static final String ALL_CANCER_STUDIES_ID = "all";
     private static final String ALL_TCGA_CANCER_STUDIES_ID = "all_tcga";
     private static final String ALL_TARGET_CANCER_STUDIES_ID = "all_nci_target";
@@ -128,7 +128,7 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
      */
     @Override
     public boolean hasPermission(Authentication authentication, Serializable targetId,
-                                 String targetType, Object permission) {
+            String targetType, Object permission) {
         if (log.isDebugEnabled()) {
             log.debug("hasPermission(), checking permissions on targetId");
         }
@@ -147,7 +147,7 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
                 return true;
             }
             CancerStudy cancerStudy = studyRepository.getStudy(targetId.toString());
-            if (cancerStudy == null) { 
+            if (cancerStudy == null) {
                 return false;
             }
             return hasPermission(authentication, cancerStudy, permission);
@@ -158,7 +158,10 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
             }
             return hasPermission(authentication, molecularProfile, permission);
         } else if ("SampleList".equals(targetType)) {
-            SampleList sampleList = sampleListRepository.getSampleList(targetId.toString());
+            //  SampleList sampleList = sampleListRepository.getSampleList(targetId.toString());
+            String newTargetId=targetId.toString().replace("_sequenced", "_all").replace("_cna", "_all");
+            System.out.println(">hasPermission: targetId="+targetId+" > "+newTargetId);
+            SampleList sampleList = sampleListRepository.getSampleList(newTargetId);
             if (sampleList == null) {
                 return false;
             }
@@ -210,7 +213,7 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
             log.debug("hasPermission(), checking permissions on targetDomainObject");
         }
         if (targetDomainObject == null) {
-           if (log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("hasPermission(), targetDomainObject is null, returning false");
             }
             return false;
@@ -220,7 +223,7 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
         if (targetDomainObject instanceof CancerStudy) {
             cancerStudy = (CancerStudy) targetDomainObject;
         } else if (targetDomainObject instanceof MolecularProfile) {
-            cancerStudy = ((MolecularProfile) targetDomainObject).getCancerStudy(); 
+            cancerStudy = ((MolecularProfile) targetDomainObject).getCancerStudy();
             if (cancerStudy == null) {
                 // cancer study was not included so get it
                 cancerStudy = studyRepository.getStudy(((MolecularProfile) targetDomainObject).getCancerStudyIdentifier());
@@ -231,7 +234,7 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
                 // cancer study was not included so get it
                 cancerStudy = studyRepository.getStudy(((SampleList) targetDomainObject).getCancerStudyIdentifier());
             }
-        } else { 
+        } else {
             if (log.isDebugEnabled()) {
                 log.debug("hasPermission(), targetDomainObject class is '" + targetDomainObject.getClass().getName() + "'");
             }
@@ -305,8 +308,8 @@ class CancerStudyPermissionEvaluator implements PermissionEvaluator {
         // if a user has access to 'all_target', simply return true for target studies
         if (grantedAuthorities.contains(ALL_TARGET_CANCER_STUDIES_ID.toUpperCase()) &&
                 (stableStudyID.toUpperCase().endsWith("_TARGET")
-                        || stableStudyID.equalsIgnoreCase("ALL_TARGET_PHASE1")
-                        || stableStudyID.equalsIgnoreCase("ALL_TARGET_PHASE2"))) {
+                || stableStudyID.equalsIgnoreCase("ALL_TARGET_PHASE1")
+                || stableStudyID.equalsIgnoreCase("ALL_TARGET_PHASE2"))) {
             if (log.isDebugEnabled()) {
                 log.debug("hasPermission(), user has access to ALL_NCI_TARGET cancer studies return true");
             }

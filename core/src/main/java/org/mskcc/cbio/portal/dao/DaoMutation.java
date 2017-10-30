@@ -13,7 +13,7 @@
  * Center has been advised of the possibility of such damage.
  */
 
-/*
+ /*
  * This file is part of cBioPortal.
  *
  * cBioPortal is free software: you can redistribute it and/or modify
@@ -28,8 +28,7 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ */
 package org.mskcc.cbio.portal.dao;
 
 import org.mskcc.cbio.portal.model.*;
@@ -45,17 +44,18 @@ import java.util.regex.*;
  * Data access object for Mutation table
  */
 public final class DaoMutation {
+
     public static final String NAN = "NaN";
 
     public static int addMutation(ExtendedMutation mutation, boolean newMutationEvent) throws DaoException {
         if (!MySQLbulkLoader.isBulkLoad()) {
             throw new DaoException("You have to turn on MySQLbulkLoader in order to insert mutations");
         } else {
-        	int result = 1;
-        	if (newMutationEvent) {
-        		//add event first, as mutation has a Foreign key constraint to the event:
-        		result = addMutationEvent(mutation.getEvent())+1;
-            } 
+            int result = 1;
+            if (newMutationEvent) {
+                //add event first, as mutation has a Foreign key constraint to the event:
+                result = addMutationEvent(mutation.getEvent()) + 1;
+            }
             MySQLbulkLoader.getMySQLbulkLoader("mutation").insertRecord(
                     Long.toString(mutation.getMutationEventId()),
                     Integer.toString(mutation.getGeneticProfileId()),
@@ -126,23 +126,26 @@ public final class DaoMutation {
                 Integer.toString(event.getOncotatorProteinPosStart()),
                 Integer.toString(event.getOncotatorProteinPosEnd()),
                 boolToStr(event.isCanonicalTranscript()),
-                keyword==null ? "\\N":(event.getGene().getHugoGeneSymbolAllCaps()+" "+keyword));
+                keyword == null ? "\\N" : (event.getGene().getHugoGeneSymbolAllCaps() + " " + keyword));
         return 1;
     }
 
-    public static int calculateMutationCount (int profileId) throws DaoException {
+    public static int calculateMutationCount(int profileId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
+            pstmt = con.prepareStatement("DELETE FROM mutation_count WHERE GENETIC_PROFILE_ID=?");
+            pstmt.setInt(1, profileId);
+            pstmt.executeUpdate();
             pstmt = con.prepareStatement(
-                    "INSERT INTO mutation_count " +
-                    "SELECT genetic_profile.`GENETIC_PROFILE_ID`, `SAMPLE_ID`, COUNT(*) AS MUTATION_COUNT " +
-                    "FROM `mutation` , `genetic_profile` " +
-                    "WHERE mutation.`GENETIC_PROFILE_ID` = genetic_profile.`GENETIC_PROFILE_ID` " +
-                    "AND genetic_profile.`GENETIC_PROFILE_ID`=? " +
-                    "GROUP BY genetic_profile.`GENETIC_PROFILE_ID` , `SAMPLE_ID`;");
+                    "INSERT INTO mutation_count "
+                    + "SELECT genetic_profile.`GENETIC_PROFILE_ID`, `SAMPLE_ID`, COUNT(*) AS MUTATION_COUNT "
+                    + "FROM `mutation` , `genetic_profile` "
+                    + "WHERE mutation.`GENETIC_PROFILE_ID` = genetic_profile.`GENETIC_PROFILE_ID` "
+                    + "AND genetic_profile.`GENETIC_PROFILE_ID`=? "
+                    + "GROUP BY genetic_profile.`GENETIC_PROFILE_ID` , `SAMPLE_ID`;");
             pstmt.setInt(1, profileId);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -151,26 +154,29 @@ public final class DaoMutation {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
         }
     }
-    
+
     public static int calculateMutationCountByKeyword(int profileId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
+            pstmt = con.prepareStatement("DELETE FROM mutation_count_by_keyword WHERE GENETIC_PROFILE_ID=?");
+            pstmt.setInt(1, profileId);
+            pstmt.executeUpdate();
             pstmt = con.prepareStatement(
-                "INSERT INTO mutation_count_by_keyword " +
-                    "SELECT g2.`GENETIC_PROFILE_ID`, mutation_event.`KEYWORD`, m2.`ENTREZ_GENE_ID`, " +
-                    "IF(mutation_event.`KEYWORD` IS NULL, 0, COUNT(DISTINCT(m2.SAMPLE_ID))) AS KEYWORD_COUNT, " +
-                    "(SELECT COUNT(DISTINCT(m1.SAMPLE_ID)) FROM `mutation` AS m1 , `genetic_profile` AS g1 " +
-                    "WHERE m1.`GENETIC_PROFILE_ID` = g1.`GENETIC_PROFILE_ID` " +
-                    "AND g1.`GENETIC_PROFILE_ID`= g2.`GENETIC_PROFILE_ID` AND m1.`ENTREZ_GENE_ID` = m2.`ENTREZ_GENE_ID` " +
-                    "GROUP BY g1.`GENETIC_PROFILE_ID` , m1.`ENTREZ_GENE_ID`) AS GENE_COUNT " +
-                    "FROM `mutation` AS m2 , `genetic_profile` AS g2 , `mutation_event` " +
-                    "WHERE m2.`GENETIC_PROFILE_ID` = g2.`GENETIC_PROFILE_ID` " +
-                    "AND m2.`MUTATION_EVENT_ID` = mutation_event.`MUTATION_EVENT_ID` " +
-                    "AND g2.`GENETIC_PROFILE_ID`=? " +
-                    "GROUP BY g2.`GENETIC_PROFILE_ID` , mutation_event.`KEYWORD` , m2.`ENTREZ_GENE_ID`;");
+                    "INSERT INTO mutation_count_by_keyword "
+                    + "SELECT g2.`GENETIC_PROFILE_ID`, mutation_event.`KEYWORD`, m2.`ENTREZ_GENE_ID`, "
+                    + "IF(mutation_event.`KEYWORD` IS NULL, 0, COUNT(DISTINCT(m2.SAMPLE_ID))) AS KEYWORD_COUNT, "
+                    + "(SELECT COUNT(DISTINCT(m1.SAMPLE_ID)) FROM `mutation` AS m1 , `genetic_profile` AS g1 "
+                    + "WHERE m1.`GENETIC_PROFILE_ID` = g1.`GENETIC_PROFILE_ID` "
+                    + "AND g1.`GENETIC_PROFILE_ID`= g2.`GENETIC_PROFILE_ID` AND m1.`ENTREZ_GENE_ID` = m2.`ENTREZ_GENE_ID` "
+                    + "GROUP BY g1.`GENETIC_PROFILE_ID` , m1.`ENTREZ_GENE_ID`) AS GENE_COUNT "
+                    + "FROM `mutation` AS m2 , `genetic_profile` AS g2 , `mutation_event` "
+                    + "WHERE m2.`GENETIC_PROFILE_ID` = g2.`GENETIC_PROFILE_ID` "
+                    + "AND m2.`MUTATION_EVENT_ID` = mutation_event.`MUTATION_EVENT_ID` "
+                    + "AND g2.`GENETIC_PROFILE_ID`=? "
+                    + "GROUP BY g2.`GENETIC_PROFILE_ID` , mutation_event.`KEYWORD` , m2.`ENTREZ_GENE_ID`;");
             pstmt.setInt(1, profileId);
             return pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -181,22 +187,23 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (int geneticProfileId, Collection<Integer> targetSampleList,
+    public static ArrayList<ExtendedMutation> getMutations(int geneticProfileId, Collection<Integer> targetSampleList,
             long entrezGeneId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                    "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE SAMPLE_ID IN ('" + org.apache.commons.lang.StringUtils.join(targetSampleList, "','") +
-                    "') AND GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID = ?");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE SAMPLE_ID IN ('" + org.apache.commons.lang.StringUtils.join(targetSampleList, "','")
+                    + "') AND GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID = ?");
             pstmt.setInt(1, geneticProfileId);
             pstmt.setLong(2, entrezGeneId);
             rs = pstmt.executeQuery();
@@ -213,10 +220,11 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static HashMap getSimplifiedMutations (int geneticProfileId, Collection<Integer> targetSampleList,
+    public static HashMap getSimplifiedMutations(int geneticProfileId, Collection<Integer> targetSampleList,
             Collection<Long> entrezGeneIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -225,12 +233,12 @@ public final class DaoMutation {
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT SAMPLE_ID, ENTREZ_GENE_ID FROM mutation " +
-                    //"INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE SAMPLE_ID IN ('" +
-                    org.apache.commons.lang.StringUtils.join(targetSampleList, "','") +
-                    "') AND GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID IN ('" +
-                    org.apache.commons.lang.StringUtils.join(entrezGeneIds, "','") + "')");
+                    "SELECT SAMPLE_ID, ENTREZ_GENE_ID FROM mutation "
+                    + //"INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
+                    "WHERE SAMPLE_ID IN ('"
+                    + org.apache.commons.lang.StringUtils.join(targetSampleList, "','")
+                    + "') AND GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID IN ('"
+                    + org.apache.commons.lang.StringUtils.join(entrezGeneIds, "','") + "')");
             pstmt.setInt(1, geneticProfileId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -246,21 +254,22 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (int geneticProfileId, int sampleId,
-                                                            long entrezGeneId) throws DaoException {
+    public static ArrayList<ExtendedMutation> getMutations(int geneticProfileId, int sampleId,
+            long entrezGeneId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                    "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE SAMPLE_ID = ? AND GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID = ?");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE SAMPLE_ID = ? AND GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID = ?");
             pstmt.setInt(1, sampleId);
             pstmt.setInt(2, geneticProfileId);
             pstmt.setLong(3, entrezGeneId);
@@ -310,20 +319,21 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (long entrezGeneId) throws DaoException {
+    public static ArrayList<ExtendedMutation> getMutations(long entrezGeneId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                    "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE mutation.ENTREZ_GENE_ID = ?");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE mutation.ENTREZ_GENE_ID = ?");
             pstmt.setLong(1, entrezGeneId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -339,20 +349,21 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (long entrezGeneId, String aminoAcidChange) throws DaoException {
+    public static ArrayList<ExtendedMutation> getMutations(long entrezGeneId, String aminoAcidChange) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation_event " +
-                    "INNER JOIN mutation ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE mutation.ENTREZ_GENE_ID = ? AND PROTEIN_CHANGE = ?");
+                    "SELECT * FROM mutation_event "
+                    + "INNER JOIN mutation ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE mutation.ENTREZ_GENE_ID = ? AND PROTEIN_CHANGE = ?");
             pstmt.setLong(1, entrezGeneId);
             pstmt.setString(2, aminoAcidChange);
             rs = pstmt.executeQuery();
@@ -369,28 +380,30 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (int geneticProfileId, int sampleId) throws DaoException {
+    public static ArrayList<ExtendedMutation> getMutations(int geneticProfileId, int sampleId) throws DaoException {
         return getMutations(geneticProfileId, Arrays.asList(new Integer(sampleId)));
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (int geneticProfileId, List<Integer> sampleIds) throws DaoException {
+    public static ArrayList<ExtendedMutation> getMutations(int geneticProfileId, List<Integer> sampleIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                    "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE GENETIC_PROFILE_ID = ? AND SAMPLE_ID in ('"+ StringUtils.join(sampleIds, "','")+"')");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE GENETIC_PROFILE_ID = ? AND SAMPLE_ID in ('" + StringUtils.join(sampleIds, "','") + "')");
             pstmt.setInt(1, geneticProfileId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -406,22 +419,23 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static boolean hasAlleleFrequencyData (int geneticProfileId, int sampleId) throws DaoException {
+    public static boolean hasAlleleFrequencyData(int geneticProfileId, int sampleId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT EXISTS (SELECT 1 FROM mutation " +
-                    "WHERE GENETIC_PROFILE_ID = ? AND SAMPLE_ID = ? AND TUMOR_ALT_COUNT>=0 AND TUMOR_REF_COUNT>=0)");
+                    "SELECT EXISTS (SELECT 1 FROM mutation "
+                    + "WHERE GENETIC_PROFILE_ID = ? AND SAMPLE_ID = ? AND TUMOR_ALT_COUNT>=0 AND TUMOR_REF_COUNT>=0)");
             pstmt.setInt(1, geneticProfileId);
             pstmt.setInt(2, sampleId);
             rs = pstmt.executeQuery();
-            return rs.next() && rs.getInt(1)==1;
+            return rs.next() && rs.getInt(1) == 1;
         } catch (NullPointerException e) {
             throw new DaoException(e);
         } catch (SQLException e) {
@@ -432,20 +446,21 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (long entrezGeneId, String aminoAcidChange, int excludeSampleId) throws DaoException {
+    public static ArrayList<ExtendedMutation> getMutations(long entrezGeneId, String aminoAcidChange, int excludeSampleId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation, mutation_event " +
-                    "WHERE mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "AND mutation.ENTREZ_GENE_ID = ? AND PROTEIN_CHANGE = ? AND SAMPLE_ID <> ?");
+                    "SELECT * FROM mutation, mutation_event "
+                    + "WHERE mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "AND mutation.ENTREZ_GENE_ID = ? AND PROTEIN_CHANGE = ? AND SAMPLE_ID <> ?");
             pstmt.setLong(1, entrezGeneId);
             pstmt.setString(2, aminoAcidChange);
             pstmt.setInt(3, excludeSampleId);
@@ -465,21 +480,22 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getMutations (int geneticProfileId,
+    public static ArrayList<ExtendedMutation> getMutations(int geneticProfileId,
             long entrezGeneId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                    "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID = ?");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE GENETIC_PROFILE_ID = ? AND mutation.ENTREZ_GENE_ID = ?");
             pstmt.setInt(1, geneticProfileId);
             pstmt.setLong(2, entrezGeneId);
             rs = pstmt.executeQuery();
@@ -495,16 +511,16 @@ public final class DaoMutation {
         return mutationList;
     }
 
-    public static ArrayList<ExtendedMutation> getAllMutations () throws DaoException {
+    public static ArrayList<ExtendedMutation> getAllMutations() throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                        "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 ExtendedMutation mutation = extractMutation(rs);
@@ -520,24 +536,26 @@ public final class DaoMutation {
 
     /**
      * Similar to getAllMutations(), but filtered by a passed geneticProfileId
+     *
      * @param geneticProfileId
      * @return
      * @throws DaoException
      *
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
-    public static ArrayList<ExtendedMutation> getAllMutations (int geneticProfileId) throws DaoException {
+    public static ArrayList<ExtendedMutation> getAllMutations(int geneticProfileId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        ArrayList <ExtendedMutation> mutationList = new ArrayList <ExtendedMutation>();
+        ArrayList<ExtendedMutation> mutationList = new ArrayList<ExtendedMutation>();
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement(
-                    "SELECT * FROM mutation " +
-                    "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE mutation.GENETIC_PROFILE_ID = ?");
+                    "SELECT * FROM mutation "
+                    + "INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE mutation.GENETIC_PROFILE_ID = ?");
             pstmt.setInt(1, geneticProfileId);
             rs = pstmt.executeQuery();
             while (rs.next()) {
@@ -553,7 +571,8 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Set<ExtendedMutation.MutationEvent> getAllMutationEvents() throws DaoException {
@@ -586,14 +605,14 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            pstmt = con.prepareStatement("SELECT * from mutation_event WHERE" +
-                                         " `ENTREZ_GENE_ID`=?" +
-                                         " AND `CHR`=?" +
-                                         " AND `START_POSITION`=?" +
-                                         " AND `END_POSITION`=?" +
-                                         " AND `TUMOR_SEQ_ALLELE`=?" +
-                                         " AND `PROTEIN_CHANGE`=?" +
-                                         " AND `MUTATION_TYPE`=?");
+            pstmt = con.prepareStatement("SELECT * from mutation_event WHERE"
+                    + " `ENTREZ_GENE_ID`=?"
+                    + " AND `CHR`=?"
+                    + " AND `START_POSITION`=?"
+                    + " AND `END_POSITION`=?"
+                    + " AND `TUMOR_SEQ_ALLELE`=?"
+                    + " AND `PROTEIN_CHANGE`=?"
+                    + " AND `MUTATION_TYPE`=?");
             pstmt.setLong(1, event.getGene().getEntrezGeneId());
             pstmt.setString(2, event.getChr());
             pstmt.setLong(3, event.getStartPosition());
@@ -604,8 +623,7 @@ public final class DaoMutation {
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 return extractMutationEvent(rs);
-            }
-            else {
+            } else {
                 return null;
             }
         } catch (SQLException e) {
@@ -660,8 +678,7 @@ public final class DaoMutation {
             mutation.setNormalAltCount(rs.getInt("NORMAL_ALT_COUNT"));
             mutation.setNormalRefCount(rs.getInt("NORMAL_REF_COUNT"));
             return mutation;
-        }
-        catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             throw new DaoException(e);
         }
     }
@@ -703,7 +720,8 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static int getCount() throws DaoException {
@@ -727,6 +745,7 @@ public final class DaoMutation {
 
     /**
      * Get significantly mutated genes
+     *
      * @param profileId
      * @param entrezGeneIds
      * @param thresholdRecurrence
@@ -734,7 +753,8 @@ public final class DaoMutation {
      * @param selectedCaseIds
      * @return
      * @throws DaoException
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Long, Map<String, String>> getSMGs(int profileId, Collection<Long> entrezGeneIds,
@@ -747,16 +767,16 @@ public final class DaoMutation {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             pstmt = con.prepareStatement("SET SESSION group_concat_max_len = 1000000");
             rs = pstmt.executeQuery();
-            String sql = "SELECT mutation.ENTREZ_GENE_ID, GROUP_CONCAT(mutation.SAMPLE_ID), COUNT(*), COUNT(*)/`LENGTH` AS count_per_nt" +
-                    " FROM mutation, gene" +
-                    " WHERE mutation.ENTREZ_GENE_ID=gene.ENTREZ_GENE_ID" +
-                    " AND GENETIC_PROFILE_ID=" + profileId +
-                    (entrezGeneIds==null?"":(" AND mutation.ENTREZ_GENE_ID IN("+StringUtils.join(entrezGeneIds,",")+")")) +
-                    (selectedCaseIds==null?"":(" AND mutation.SAMPLE_ID IN("+StringUtils.join(selectedCaseIds,",")+")")) +
-                    " GROUP BY mutation.ENTREZ_GENE_ID" +
-                    (thresholdRecurrence>0?(" HAVING COUNT(*)>="+thresholdRecurrence):"") +
-                    " ORDER BY count_per_nt DESC" +
-                    (thresholdNumGenes>0?(" LIMIT 0,"+thresholdNumGenes):"");
+            String sql = "SELECT mutation.ENTREZ_GENE_ID, GROUP_CONCAT(mutation.SAMPLE_ID), COUNT(*), COUNT(*)/`LENGTH` AS count_per_nt"
+                    + " FROM mutation, gene"
+                    + " WHERE mutation.ENTREZ_GENE_ID=gene.ENTREZ_GENE_ID"
+                    + " AND GENETIC_PROFILE_ID=" + profileId
+                    + (entrezGeneIds == null ? "" : (" AND mutation.ENTREZ_GENE_ID IN(" + StringUtils.join(entrezGeneIds, ",") + ")"))
+                    + (selectedCaseIds == null ? "" : (" AND mutation.SAMPLE_ID IN(" + StringUtils.join(selectedCaseIds, ",") + ")"))
+                    + " GROUP BY mutation.ENTREZ_GENE_ID"
+                    + (thresholdRecurrence > 0 ? (" HAVING COUNT(*)>=" + thresholdRecurrence) : "")
+                    + " ORDER BY count_per_nt DESC"
+                    + (thresholdNumGenes > 0 ? (" LIMIT 0," + thresholdNumGenes) : "");
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             Map<Long, Map<String, String>> map = new HashMap();
@@ -776,11 +796,13 @@ public final class DaoMutation {
 
     /**
      * return the number of all mutations for a profile
+     *
      * @param profileId
      * @return Map &lt; case id, mutation count &gt;
      * @throws DaoException
      *
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static int countMutationEvents(int profileId) throws DaoException {
@@ -789,8 +811,8 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT count(DISTINCT `SAMPLE_ID`, `MUTATION_EVENT_ID`) FROM mutation" +
-                    " WHERE `GENETIC_PROFILE_ID`=" + profileId;
+            String sql = "SELECT count(DISTINCT `SAMPLE_ID`, `MUTATION_EVENT_ID`) FROM mutation"
+                    + " WHERE `GENETIC_PROFILE_ID`=" + profileId;
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             if (rs.next()) {
@@ -806,11 +828,13 @@ public final class DaoMutation {
 
     /**
      * return the number of mutations for each sample
+     *
      * @param sampleIds if null, return all case available
      * @param profileId
      * @return Map &lt; sample id, mutation count &gt;
      * @throws DaoException
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Integer, Integer> countMutationEvents(int profileId, Collection<Integer> sampleIds) throws DaoException {
@@ -820,13 +844,13 @@ public final class DaoMutation {
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             String sql;
-            if (sampleIds==null) {
-                sql = "SELECT `SAMPLE_ID`, `MUTATION_COUNT` FROM mutation_count" +
-                        " WHERE `GENETIC_PROFILE_ID`=" + profileId;
+            if (sampleIds == null) {
+                sql = "SELECT `SAMPLE_ID`, `MUTATION_COUNT` FROM mutation_count"
+                        + " WHERE `GENETIC_PROFILE_ID`=" + profileId;
             } else {
-                sql = "SELECT `SAMPLE_ID`, `MUTATION_COUNT` FROM mutation_count" +
-                        " WHERE `GENETIC_PROFILE_ID`=" + profileId +
-                        " AND `SAMPLE_ID` IN ('" + StringUtils.join(sampleIds,"','") + "')";
+                sql = "SELECT `SAMPLE_ID`, `MUTATION_COUNT` FROM mutation_count"
+                        + " WHERE `GENETIC_PROFILE_ID`=" + profileId
+                        + " AND `SAMPLE_ID` IN ('" + StringUtils.join(sampleIds, "','") + "')";
             }
             pstmt = con.prepareStatement(sql);
             Map<Integer, Integer> map = new HashMap<Integer, Integer>();
@@ -846,10 +870,12 @@ public final class DaoMutation {
 
     /**
      * get events for each sample
+     *
      * @return Map &lt; sample id, list of event ids &gt;
      * @throws DaoException
      *
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Integer, Set<Long>> getSamplesWithMutations(Collection<Long> eventIds) throws DaoException {
@@ -858,11 +884,13 @@ public final class DaoMutation {
 
     /**
      * get events for each sample
+     *
      * @param concatEventIds event ids concatenated by comma (,)
      * @return Map &lt; sample id, list of event ids &gt;
      * @throws DaoException
      *
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Integer, Set<Long>> getSamplesWithMutations(String concatEventIds) throws DaoException {
@@ -874,11 +902,11 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT `SAMPLE_ID`, `MUTATION_EVENT_ID` FROM mutation" +
-                    " WHERE `MUTATION_EVENT_ID` IN (" +
-                    concatEventIds + ")";
+            String sql = "SELECT `SAMPLE_ID`, `MUTATION_EVENT_ID` FROM mutation"
+                    + " WHERE `MUTATION_EVENT_ID` IN ("
+                    + concatEventIds + ")";
             pstmt = con.prepareStatement(sql);
-            Map<Integer, Set<Long>> map = new HashMap<Integer, Set<Long>> ();
+            Map<Integer, Set<Long>> map = new HashMap<Integer, Set<Long>>();
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 int sampleId = rs.getInt("SAMPLE_ID");
@@ -903,7 +931,8 @@ public final class DaoMutation {
     /**
      * @return Map &lt; sample, list of event ids &gt;
      * @throws DaoException
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Sample, Set<Long>> getSimilarSamplesWithMutationsByKeywords(
@@ -926,13 +955,13 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT `SAMPLE_ID`, `GENETIC_PROFILE_ID`, me1.`MUTATION_EVENT_ID`" +
-                    " FROM mutation cme, mutation_event me1, mutation_event me2" +
-                    " WHERE me1.`MUTATION_EVENT_ID` IN ("+ concatEventIds + ")" +
-                    " AND me1.`KEYWORD`=me2.`KEYWORD`" +
-                    " AND cme.`MUTATION_EVENT_ID`=me2.`MUTATION_EVENT_ID`";
+            String sql = "SELECT `SAMPLE_ID`, `GENETIC_PROFILE_ID`, me1.`MUTATION_EVENT_ID`"
+                    + " FROM mutation cme, mutation_event me1, mutation_event me2"
+                    + " WHERE me1.`MUTATION_EVENT_ID` IN (" + concatEventIds + ")"
+                    + " AND me1.`KEYWORD`=me2.`KEYWORD`"
+                    + " AND cme.`MUTATION_EVENT_ID`=me2.`MUTATION_EVENT_ID`";
             pstmt = con.prepareStatement(sql);
-            Map<Sample, Set<Long>> map = new HashMap<Sample, Set<Long>> ();
+            Map<Sample, Set<Long>> map = new HashMap<Sample, Set<Long>>();
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Sample sample = DaoSample.getSampleById(rs.getInt("SAMPLE_ID"));
@@ -959,7 +988,8 @@ public final class DaoMutation {
      * @return Map &lt; sample, list of event ids &gt;
      * @throws DaoException
      *
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Sample, Set<Long>> getSimilarSamplesWithMutatedGenes(
@@ -972,11 +1002,11 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT `SAMPLE_ID`, `GENETIC_PROFILE_ID`, `ENTREZ_GENE_ID`" +
-                    " FROM mutation" +
-                    " WHERE `ENTREZ_GENE_ID` IN ("+ StringUtils.join(entrezGeneIds,",") + ")";
+            String sql = "SELECT `SAMPLE_ID`, `GENETIC_PROFILE_ID`, `ENTREZ_GENE_ID`"
+                    + " FROM mutation"
+                    + " WHERE `ENTREZ_GENE_ID` IN (" + StringUtils.join(entrezGeneIds, ",") + ")";
             pstmt = con.prepareStatement(sql);
-            Map<Sample, Set<Long>> map = new HashMap<Sample, Set<Long>> ();
+            Map<Sample, Set<Long>> map = new HashMap<Sample, Set<Long>>();
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Sample sample = DaoSample.getSampleById(rs.getInt("SAMPLE_ID"));
@@ -999,7 +1029,8 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Long, Integer> countSamplesWithMutationEvents(Collection<Long> eventIds, int profileId) throws DaoException {
@@ -1008,12 +1039,14 @@ public final class DaoMutation {
 
     /**
      * return the number of samples for each mutation event
+     *
      * @param concatEventIds
      * @param profileId
      * @return Map &lt; event id, sampleCount &gt;
      * @throws DaoException
-     * 
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     *
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Long, Integer> countSamplesWithMutationEvents(String concatEventIds, int profileId) throws DaoException {
@@ -1025,11 +1058,11 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT `MUTATION_EVENT_ID`, count(DISTINCT `SAMPLE_ID`) FROM mutation" +
-                    " WHERE `GENETIC_PROFILE_ID`=" + profileId +
-                    " AND `MUTATION_EVENT_ID` IN (" +
-                    concatEventIds +
-                    ") GROUP BY `MUTATION_EVENT_ID`";
+            String sql = "SELECT `MUTATION_EVENT_ID`, count(DISTINCT `SAMPLE_ID`) FROM mutation"
+                    + " WHERE `GENETIC_PROFILE_ID`=" + profileId
+                    + " AND `MUTATION_EVENT_ID` IN ("
+                    + concatEventIds
+                    + ") GROUP BY `MUTATION_EVENT_ID`";
             pstmt = con.prepareStatement(sql);
             Map<Long, Integer> map = new HashMap<Long, Integer>();
             rs = pstmt.executeQuery();
@@ -1045,7 +1078,8 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Long, Integer> countSamplesWithMutatedGenes(Collection<Long> entrezGeneIds, int profileId) throws DaoException {
@@ -1054,11 +1088,13 @@ public final class DaoMutation {
 
     /**
      * return the number of samples for each mutated genes
+     *
      * @param concatEntrezGeneIds
      * @param profileId
      * @return Map &lt; entrez, sampleCount &gt;
      * @throws DaoException
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<Long, Integer> countSamplesWithMutatedGenes(String concatEntrezGeneIds, int profileId) throws DaoException {
@@ -1070,12 +1106,12 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID)" +
-                    " FROM mutation" +
-                    " WHERE GENETIC_PROFILE_ID=" + profileId +
-                    " AND ENTREZ_GENE_ID IN (" +
-                    concatEntrezGeneIds +
-                    ") GROUP BY `ENTREZ_GENE_ID`";
+            String sql = "SELECT ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID)"
+                    + " FROM mutation"
+                    + " WHERE GENETIC_PROFILE_ID=" + profileId
+                    + " AND ENTREZ_GENE_ID IN ("
+                    + concatEntrezGeneIds
+                    + ") GROUP BY `ENTREZ_GENE_ID`";
             pstmt = con.prepareStatement(sql);
             Map<Long, Integer> map = new HashMap<Long, Integer>();
             rs = pstmt.executeQuery();
@@ -1091,7 +1127,8 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Map<String, Integer> countSamplesWithKeywords(Collection<String> keywords, int profileId) throws DaoException {
@@ -1103,13 +1140,13 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT KEYWORD, count(DISTINCT SAMPLE_ID)" +
-                    " FROM mutation, mutation_event" +
-                    " WHERE GENETIC_PROFILE_ID=" + profileId +
-                    " AND mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID" +
-                    " AND KEYWORD IN ('" +
-                    StringUtils.join(keywords,"','") +
-                    "') GROUP BY `KEYWORD`";
+            String sql = "SELECT KEYWORD, count(DISTINCT SAMPLE_ID)"
+                    + " FROM mutation, mutation_event"
+                    + " WHERE GENETIC_PROFILE_ID=" + profileId
+                    + " AND mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID"
+                    + " AND KEYWORD IN ('"
+                    + StringUtils.join(keywords, "','")
+                    + "') GROUP BY `KEYWORD`";
             pstmt = con.prepareStatement(sql);
             Map<String, Integer> map = new HashMap<String, Integer>();
             rs = pstmt.executeQuery();
@@ -1126,11 +1163,13 @@ public final class DaoMutation {
 
     /**
      *
-     * Counts all the samples in each cancer study in the collection of geneticProfileIds by mutation keyword
+     * Counts all the samples in each cancer study in the collection of
+     * geneticProfileIds by mutation keyword
      *
      * @param keywords
      * @param internalProfileIds
-     * @return Collection of Maps {"keyword" , "hugo" , "cancer_study" , "count"} where cancer_study == cancerStudy.getName();
+     * @return Collection of Maps {"keyword" , "hugo" , "cancer_study" ,
+     * "count"} where cancer_study == cancerStudy.getName();
      * @throws DaoException
      * @author Gideon Dresdner <dresdnerg@cbio.mskcc.org>
      */
@@ -1140,11 +1179,11 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT KEYWORD, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID) FROM mutation, mutation_event " +
-                    "WHERE GENETIC_PROFILE_ID IN (" + StringUtils.join(internalProfileIds, ",") + ") " +
-                    "AND mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "AND KEYWORD IN ('" + StringUtils.join(keywords, "','") + "') " +
-                    "GROUP BY KEYWORD, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID";
+            String sql = "SELECT KEYWORD, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID) FROM mutation, mutation_event "
+                    + "WHERE GENETIC_PROFILE_ID IN (" + StringUtils.join(internalProfileIds, ",") + ") "
+                    + "AND mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "AND KEYWORD IN ('" + StringUtils.join(keywords, "','") + "') "
+                    + "GROUP BY KEYWORD, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID";
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             Collection<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
@@ -1179,12 +1218,13 @@ public final class DaoMutation {
 
     /**
      *
-     * Counts up all the samples that have any mutation in a gene by genomic profile (ids)
+     * Counts up all the samples that have any mutation in a gene by genomic
+     * profile (ids)
      *
      * @param hugos
      * @param internalProfileIds
-     * @return Collection of Maps {"hugo" , "cancer_study" , "count"} where cancer_study == cancerStudy.getName();
-     * and gene is the hugo gene symbol.
+     * @return Collection of Maps {"hugo" , "cancer_study" , "count"} where
+     * cancer_study == cancerStudy.getName(); and gene is the hugo gene symbol.
      *
      * @throws DaoException
      * @author Gideon Dresdner <dresdnerg@cbio.mskcc.org>
@@ -1206,11 +1246,11 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "select mutation.ENTREZ_GENE_ID, mutation.GENETIC_PROFILE_ID, count(distinct SAMPLE_ID) from mutation, mutation_event\n" +
-                    "where GENETIC_PROFILE_ID in (" + StringUtils.join(internalProfileIds, ",") + ")\n" +
-                    "and mutation.ENTREZ_GENE_ID in (" + StringUtils.join(entrezs, ",") + ")\n" +
-                    "and mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID\n" +
-                    "group by ENTREZ_GENE_ID, GENETIC_PROFILE_ID";
+            String sql = "select mutation.ENTREZ_GENE_ID, mutation.GENETIC_PROFILE_ID, count(distinct SAMPLE_ID) from mutation, mutation_event\n"
+                    + "where GENETIC_PROFILE_ID in (" + StringUtils.join(internalProfileIds, ",") + ")\n"
+                    + "and mutation.ENTREZ_GENE_ID in (" + StringUtils.join(entrezs, ",") + ")\n"
+                    + "and mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID\n"
+                    + "group by ENTREZ_GENE_ID, GENETIC_PROFILE_ID";
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             Collection<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
@@ -1243,18 +1283,17 @@ public final class DaoMutation {
     }
 
     public static Collection<Map<String, Object>> countSamplesWithProteinChanges(
-            Collection<String> proteinChanges, Collection<Integer> internalProfileIds) throws DaoException
-    {
+            Collection<String> proteinChanges, Collection<Integer> internalProfileIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT PROTEIN_CHANGE, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID) FROM mutation, mutation_event " +
-                         "WHERE GENETIC_PROFILE_ID IN (" + StringUtils.join(internalProfileIds, ",") + ") " +
-                         "AND mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                         "AND PROTEIN_CHANGE IN ('" + StringUtils.join(proteinChanges, "','") + "') " +
-                         "GROUP BY PROTEIN_CHANGE, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID";
+            String sql = "SELECT PROTEIN_CHANGE, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID) FROM mutation, mutation_event "
+                    + "WHERE GENETIC_PROFILE_ID IN (" + StringUtils.join(internalProfileIds, ",") + ") "
+                    + "AND mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "AND PROTEIN_CHANGE IN ('" + StringUtils.join(proteinChanges, "','") + "') "
+                    + "GROUP BY PROTEIN_CHANGE, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID";
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             Collection<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
@@ -1289,8 +1328,7 @@ public final class DaoMutation {
     }
 
     public static Collection<Map<String, Object>> countSamplesWithProteinPosStarts(
-            Collection<String> proteinPosStarts, Collection<Integer> internalProfileIds) throws DaoException
-    {
+            Collection<String> proteinPosStarts, Collection<Integer> internalProfileIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1306,15 +1344,17 @@ public final class DaoMutation {
                 }
             }
         }
-        if (geneIdSet.size() == 0 || internalProfileIds.size() == 0) return new ArrayList<Map<String, Object>>(); //empty IN() clause would be a SQL error below
+        if (geneIdSet.size() == 0 || internalProfileIds.size() == 0) {
+            return new ArrayList<Map<String, Object>>(); //empty IN() clause would be a SQL error below
+        }
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT ONCOTATOR_PROTEIN_POS_START, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID) " +
-                    "FROM mutation INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID " +
-                    "WHERE mutation.ENTREZ_GENE_ID IN (" + StringUtils.join(geneIdSet, ",") + ") " +
-                    "AND GENETIC_PROFILE_ID IN (" + StringUtils.join(internalProfileIds, ",") + ") " +
-                    "AND (mutation.ENTREZ_GENE_ID, ONCOTATOR_PROTEIN_POS_START) IN (" + StringUtils.join(proteinPosStarts, ",") + ") " +
-                    "GROUP BY ONCOTATOR_PROTEIN_POS_START, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID";
+            String sql = "SELECT ONCOTATOR_PROTEIN_POS_START, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID, count(DISTINCT SAMPLE_ID) "
+                    + "FROM mutation INNER JOIN mutation_event ON mutation.MUTATION_EVENT_ID=mutation_event.MUTATION_EVENT_ID "
+                    + "WHERE mutation.ENTREZ_GENE_ID IN (" + StringUtils.join(geneIdSet, ",") + ") "
+                    + "AND GENETIC_PROFILE_ID IN (" + StringUtils.join(internalProfileIds, ",") + ") "
+                    + "AND (mutation.ENTREZ_GENE_ID, ONCOTATOR_PROTEIN_POS_START) IN (" + StringUtils.join(proteinPosStarts, ",") + ") "
+                    + "GROUP BY ONCOTATOR_PROTEIN_POS_START, GENETIC_PROFILE_ID, mutation.ENTREZ_GENE_ID";
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             Collection<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
@@ -1334,7 +1374,7 @@ public final class DaoMutation {
                 CanonicalGene gene = DaoGeneOptimized.getInstance().getGene(entrez);
                 String hugo = gene.getHugoGeneSymbolAllCaps();
                 d.put("protein_pos_start", proteinPosStart);
-                d.put("protein_start_with_hugo", hugo+"_"+proteinPosStart);
+                d.put("protein_start_with_hugo", hugo + "_" + proteinPosStart);
                 d.put("hugo", hugo);
                 d.put("cancer_study", name);
                 d.put("cancer_type", cancerType);
@@ -1350,7 +1390,8 @@ public final class DaoMutation {
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Set<Long> getGenesOfMutations(
@@ -1359,12 +1400,15 @@ public final class DaoMutation {
     }
 
     /**
-     * return entrez gene ids of the mutations specified by their mutaiton event ids.
+     * return entrez gene ids of the mutations specified by their mutaiton event
+     * ids.
+     *
      * @param concatEventIds
      * @param profileId
      * @return
      * @throws DaoException
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Set<Long> getGenesOfMutations(String concatEventIds, int profileId)
@@ -1377,8 +1421,8 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT DISTINCT ENTREZ_GENE_ID FROM mutation_event " +
-                    "WHERE MUTATION_EVENT_ID in (" + concatEventIds + ")";
+            String sql = "SELECT DISTINCT ENTREZ_GENE_ID FROM mutation_event "
+                    + "WHERE MUTATION_EVENT_ID in (" + concatEventIds + ")";
             pstmt = con.prepareStatement(sql);
             Set<Long> set = new HashSet<Long>();
             rs = pstmt.executeQuery();
@@ -1395,11 +1439,13 @@ public final class DaoMutation {
 
     /**
      * return keywords of the mutations specified by their mutaiton event ids.
+     *
      * @param concatEventIds
      * @param profileId
      * @return
      * @throws DaoException
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static Set<String> getKeywordsOfMutations(String concatEventIds, int profileId)
@@ -1412,8 +1458,8 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT DISTINCT KEYWORD FROM mutation_event " +
-                    "WHERE MUTATION_EVENT_ID in (" + concatEventIds + ")";
+            String sql = "SELECT DISTINCT KEYWORD FROM mutation_event "
+                    + "WHERE MUTATION_EVENT_ID in (" + concatEventIds + ")";
             pstmt = con.prepareStatement(sql);
             Set<String> set = new HashSet<String>();
             rs = pstmt.executeQuery();
@@ -1428,13 +1474,13 @@ public final class DaoMutation {
         }
     }
 
-    protected static String boolToStr(boolean value)
-    {
+    protected static String boolToStr(boolean value) {
         return value ? "1" : "0";
     }
 
     /**
-     * @deprecated  We believe that this method is no longer called by any part of the codebase, and it will soon be deleted.
+     * @deprecated We believe that this method is no longer called by any part
+     * of the codebase, and it will soon be deleted.
      */
     @Deprecated
     public static void deleteAllRecordsInGeneticProfile(long geneticProfileId) throws DaoException {
@@ -1471,7 +1517,7 @@ public final class DaoMutation {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
         }
     }
-    
+
     /**
      * Gets all tiers in alphabetical order.
      *
@@ -1505,10 +1551,10 @@ public final class DaoMutation {
                 }
             }
         }
-        
+
         return tiers;
     }
-    
+
     /**
      * Returns the number of tiers in the cancer study..
      *
@@ -1520,17 +1566,17 @@ public final class DaoMutation {
         List<String> tiers = getTiers(cancerStudyStableId);
         return tiers.size();
     }
-    
+
     /**
-     * Returns true if there are "Putative_Driver" or "Putative_Passenger" values in the
-     * binary annotation column. Otherwise, it returns false.
+     * Returns true if there are "Putative_Driver" or "Putative_Passenger"
+     * values in the binary annotation column. Otherwise, it returns false.
      *
      * @param
      * @return Ordered list of tiers.
      * @throws DaoException Database Error.
      */
     public static boolean hasDriverAnnotations(String cancerStudyStableId) throws DaoException {
-	Connection con = null;
+        Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         List<String> driverValues = new ArrayList<String>();

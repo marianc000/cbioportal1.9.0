@@ -17,9 +17,10 @@
 
 <html class="cbioportal-frontend">
 <head>
-    
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>    
 <title>${title}</title>
-    
+
 <link rel="icon" href="images/cbioportal_icon.png"/>
 <jsp:include page="/WEB-INF/jsp/global/frontend_config.jsp" />
 <link rel="stylesheet" href="css/header.css?<%=GlobalProperties.getAppVersion()%>" />

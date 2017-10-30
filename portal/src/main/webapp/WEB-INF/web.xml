@@ -7,7 +7,7 @@
     <!-- general settings -->
 
     <session-config>
-      <session-timeout>720</session-timeout>
+      <session-timeout>30</session-timeout>
     </session-config>
     <mime-mapping>
         <extension>wsdl</extension>
@@ -76,7 +76,7 @@
       <init-param>
         <param-name>cors.allowed.origins</param-name>
         <!-- limit to portal server -->
-        <param-value>${session.service.origin}</param-value>
+        <param-value>*</param-value>
       </init-param>
     </filter>
 
@@ -465,16 +465,16 @@
         <servlet-name>MutationsJSON</servlet-name>
         <url-pattern>/mutations.json</url-pattern>
     </servlet-mapping>
-
+    
     <servlet>
-    <servlet-name>CnaJSON</servlet-name>
+        <servlet-name>CnaJSON</servlet-name>
         <servlet-class>org.mskcc.cbio.portal.servlet.CnaJSON</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>CnaJSON</servlet-name>
         <url-pattern>/cna.json</url-pattern>
     </servlet-mapping>
-    
+
     <servlet>
         <servlet-name>SVGtoPDFConverter</servlet-name>
         <servlet-class>org.mskcc.cbio.portal.servlet.SvgConverter</servlet-class>

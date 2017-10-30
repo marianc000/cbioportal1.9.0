@@ -792,35 +792,8 @@ public class GlobalProperties {
         
     }
  
-    public static String getOncoKBApiUrl()
-    {
-        String oncokbApiUrl = properties.getProperty(ONCOKB_API_URL);
-        String showOncokb = properties.getProperty(SHOW_ONCOKB);
-
-        if(showOncokb == null || showOncokb.isEmpty()) {
-            showOncokb = "true";
-        }
-        // This only applies if there is no oncokb.api.url property in the portal.properties file.
-        // Empty string should be used if you want to disable the OncoKB annotation.
-        if(oncokbApiUrl == null) {
-            oncokbApiUrl = "http://oncokb.org/legacy-api/";
-        }
-
-        //Test connection of OncoKB website.
-        if(!oncokbApiUrl.isEmpty() && showOncokb.equals("true")) {
-            try {
-                URL url = new URL(oncokbApiUrl+"access");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                if(conn.getResponseCode() != 200) {
-                    oncokbApiUrl = "";
-                }
-                conn.disconnect();
-                return oncokbApiUrl;
-            } catch (Exception e) {
-                return "";
-            }
-        }
-        return "";
+    public static String getOncoKBApiUrl() {
+        return "http://oncokb.org/legacy-api/";
     }
 
     public static String getCivicUrl() {

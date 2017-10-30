@@ -256,11 +256,11 @@ window.initDatamanager = function (genetic_profile_ids, oql_query, cancer_study_
 	    }
 	    $.ajax({
 		type: "POST",
-		url: "api-legacy/proxy/oncokb",
+		url: "http://oncokb.org/legacy-api/indicator.json",
 		contentType: "application/json",
 		data: JSON.stringify(query)
 	    }).then(function (response) {
-		response = JSON.parse(response);
+		// response = JSON.parse(response);
 		for (var i = 0; i < response.length; i++) {
 		    oncogenic[response[i].query.id] = response[i].oncogenic.toLowerCase();
 		}
@@ -345,10 +345,11 @@ window.initDatamanager = function (genetic_profile_ids, oql_query, cancer_study_
 	    var attribute_name = 'cancer_hotspots_hotspot';
 	    var get_promise = $.ajax({
 		type: 'GET',
-		url: 'api-legacy/proxy/cancerHotSpots',
+		url: 'http://cancerhotspots.org/api/hotspots/single'
 	    });
 	    get_promise.then(function (response) {
-		response = JSON.parse(response);
+              //  the reponse is sent as JSON
+		//response = JSON.parse(response);
 		// Gather hotspots into data structures for querying
 		var gene_to_hotspots = {};// { [hugoSymbol:string]:{ missense: [number,number][], indel: [number,number][] } }
 		for (var i=0; i<genes.length; i++) {

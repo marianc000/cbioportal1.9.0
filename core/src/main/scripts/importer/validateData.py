@@ -1280,9 +1280,9 @@ class MutationsExtendedValidator(Validator):
 
     def checkValidationStatus(self, value):
         # if value is not blank, then it should be one of these:
-        if self.checkNotBlank(value) and value.lower() not in ('untested', 'inconclusive',
-                                 'valid', 'invalid', 'na', 'redacted', 'unknown'):
-            return False
+       # if self.checkNotBlank(value) and value.lower() not in ('untested', 'inconclusive',
+        #                         'valid', 'invalid', 'na', 'redacted', 'unknown'):
+         #   return False
         return True
 
     def check_t_alt_count(self, value):
@@ -2208,8 +2208,7 @@ class SegValidator(Validator):
 
         chrom_size_dict = {}
         chrom_size_url = (
-            'http://hgdownload.cse.ucsc.edu'
-            '/goldenPath/{build}/bigZips/{build}.chrom.sizes').format(
+            'http://localhost:8080/ImportResources/{build}.chrom.sizes').format(
                 build=genome_build)
         logger.debug("Retrieving chromosome lengths from '%s'",
                      chrom_size_url)

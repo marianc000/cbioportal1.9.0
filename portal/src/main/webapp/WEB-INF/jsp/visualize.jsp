@@ -30,10 +30,13 @@
  - along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --%>
 
+<%@ page import="org.mskcc.cbio.portal.util.GlobalProperties" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.codehaus.jackson.map.ObjectMapper" %> 
+<%@ page import="org.apache.commons.lang.StringUtils" %> 
 
-<%@ include file="global/global_variables.jsp" %>
-<jsp:include page="global/header.jsp" flush="true" />
-
+<jsp:include page="global/headerWithGlobalVariables.jsp" flush="true" />
+<%@ include file="global/global_variablesJava.jsp" %>
 <script type="text/javascript" src="js/src/modifyQuery.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
 <script>
@@ -47,8 +50,6 @@ window.onReactAppReady(function() {
 
 <div id="reactRoot" class="hidden"></div>
     
-<%@ page import="java.util.Map" %>
-<%@ page import="org.codehaus.jackson.map.ObjectMapper" %>
 
 <%
     // we have session service running AND this was a post, 
