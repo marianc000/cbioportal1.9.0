@@ -13,13 +13,10 @@ import javax.sql.DataSource;
 import static marian.caikovski.redirect.servlet.MyRidirectServlet.IPP_ATTRIBUTE;
 import static marian.caikovski.redirect.servlet.MyRidirectServlet.SOARIAN_USERNAME_ATTRIBUTE;
 import static marian.caikovski.redirect.servlet.MyRidirectServlet.STUDY_NAME_ATTRIBUTE;
-import static marian.caikovski.utils.DatabaseUtil.getStudyName;
 import org.apache.log4j.Logger;
 
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,15 +25,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.memory.UserAttribute;
-import org.springframework.util.Assert;
 import org.springframework.web.filter.GenericFilterBean;
 
 public class MyAnonymousAuthenticationFilter extends GenericFilterBean implements InitializingBean {
 
     Logger logger = Logger.getLogger(getClass().getName());
     //~ Instance fields ================================================================================================
-    private AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource = new WebAuthenticationDetailsSource();
-    private String key;
+ //   private AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource = new WebAuthenticationDetailsSource();
+  //  private String key;
     private Object principal;
     private List<GrantedAuthority> authorities;
     @Autowired
@@ -44,7 +40,7 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
 
     public MyAnonymousAuthenticationFilter(String key) {
         logger.debug(">MyAnonymousAuthenticationFilter:constructor2: ds=" + ds);
-        this.key = key;
+     //   this.key = key;
         this.principal = "anonymousUser";
         this.authorities = AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS");
     }
@@ -52,7 +48,7 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
         logger.debug(">doFilter: ds=" + ds);
-        HttpServletRequest request = (HttpServletRequest) req;
+       
         Authentication a = SecurityContextHolder.getContext().getAuthentication();
 
         if (a == null) {
@@ -68,7 +64,7 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
             }
         }
 
-        authenticateSoarian(request);
+        authenticateSoarian((HttpServletRequest) req);
 
         chain.doFilter(req, res);
     }
@@ -76,27 +72,20 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
     void authenticateSoarian(HttpServletRequest req) {
         HttpSession session = req.getSession();
         Object soarianUser = session.getAttribute(SOARIAN_USERNAME_ATTRIBUTE);
-        Object ipp = session.getAttribute(IPP_ATTRIBUTE);
+        //  Object ipp = session.getAttribute(IPP_ATTRIBUTE);
         Object studyName = session.getAttribute(STUDY_NAME_ATTRIBUTE);
-        logger.debug("soarianUser: " + soarianUser + "; ipp: " + ipp + "; studyName:" + studyName);
-        if (req.getQueryString() == null) { // it and getParameter somehow does not always work, 
-            logger.warn("getQueryString: " + req.getQueryString());
-        }
+        logger.debug("soarianUser: " + soarianUser +   "; studyName:" + studyName);
+//        if (req.getQueryString() == null) { // it and getParameter somehow does not always work, 
+//            logger.warn("very strange getQueryString: " + req.getQueryString());
+//        }
         if (soarianUser != null) {
             req.getSession().removeAttribute(SOARIAN_USERNAME_ATTRIBUTE);
-            if (ipp != null) {
-                req.getSession().removeAttribute(IPP_ATTRIBUTE);
-                if (studyName != null) {
-                    req.getSession().removeAttribute(STUDY_NAME_ATTRIBUTE);
-
-                    SecurityContextHolder.getContext().setAuthentication(createAuthentication(req, soarianUser.toString(), ipp.toString(), studyName.toString()));
-
-                    logger.debug("Populated SecurityContextHolder with  token: ");
-                } else {
-                    logger.warn("studyName attribute is null, did nothing: ");
-                }
+            if (studyName != null) {
+                req.getSession().removeAttribute(STUDY_NAME_ATTRIBUTE);
+                SecurityContextHolder.getContext().setAuthentication(createAuthentication(soarianUser.toString(), studyName.toString()));
+                logger.debug("Populated SecurityContextHolder with  token");
             } else {
-                logger.warn("ipp attribute is null, did nothing: ");
+                logger.warn("studyName attribute is null, did nothing: ");
             }
         } else {
             logger.debug("Soarian user is null, did nothing: ");
@@ -114,7 +103,7 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
     }
     static String NO_PASSWORD = "noPassword";
 
-    protected Authentication createAuthentication(HttpServletRequest request, String soarianUser, String ipp, String studyName) {
+    protected Authentication createAuthentication(String soarianUser, String studyName) {
         //   (String email, List<String> authorities)
         //  List<String> authorityList = new LinkedList<>();
         //  authorityList.add("cbioportal:ALL");
@@ -125,15 +114,15 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
         List<GrantedAuthority> grantedAuthorities = AuthorityUtils.createAuthorityList("cbioportal:" + studyName);
         UserDetails user = new User(soarianUser, NO_PASSWORD, grantedAuthorities);
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, NO_PASSWORD, user.getAuthorities());
-        auth.setDetails(authenticationDetailsSource.buildDetails(request));
+        // auth.setDetails(authenticationDetailsSource.buildDetails(request));
 
         return auth;
     }
 
-    public void setAuthenticationDetailsSource(AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource) {
-        Assert.notNull(authenticationDetailsSource, "AuthenticationDetailsSource required");
-        this.authenticationDetailsSource = authenticationDetailsSource;
-    }
+//    public void setAuthenticationDetailsSource(AuthenticationDetailsSource<HttpServletRequest, ?> authenticationDetailsSource) {
+//        Assert.notNull(authenticationDetailsSource, "AuthenticationDetailsSource required");
+//        this.authenticationDetailsSource = authenticationDetailsSource;
+//    }
 
     public Object getPrincipal() {
         return principal;
@@ -147,10 +136,10 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
      *
      * @deprecated use constructor injection instead
      */
-    @Deprecated
-    public void setKey(String key) {
-        this.key = key;
-    }
+//    @Deprecated
+//    public void setKey(String key) {
+//        this.key = key;
+//    }
 
     /**
      *
