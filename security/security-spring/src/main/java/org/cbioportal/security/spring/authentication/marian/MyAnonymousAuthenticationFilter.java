@@ -8,8 +8,11 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
+import static marian.caikovski.redirect.servlet.MyRidirectServlet.IPP_ATTRIBUTE;
 import static marian.caikovski.redirect.servlet.MyRidirectServlet.SOARIAN_USERNAME_ATTRIBUTE;
+import static marian.caikovski.redirect.servlet.MyRidirectServlet.STUDY_NAME_ATTRIBUTE;
 import static marian.caikovski.utils.DatabaseUtil.getStudyName;
 import org.apache.log4j.Logger;
 
@@ -69,18 +72,32 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
 
         chain.doFilter(req, res);
     }
- 
 
     void authenticateSoarian(HttpServletRequest req) {
-        Object soarianUser = req.getSession().getAttribute(SOARIAN_USERNAME_ATTRIBUTE);
-
-        logger.debug("soarianUser: " + soarianUser);
+        HttpSession session = req.getSession();
+        Object soarianUser = session.getAttribute(SOARIAN_USERNAME_ATTRIBUTE);
+        Object ipp = session.getAttribute(IPP_ATTRIBUTE);
+        Object studyName = session.getAttribute(STUDY_NAME_ATTRIBUTE);
+        logger.debug("soarianUser: " + soarianUser + "; ipp: " + ipp + "; studyName:" + studyName);
+        if (req.getQueryString() == null) { // it and getParameter somehow does not always work, 
+            logger.warn("getQueryString: " + req.getQueryString());
+        }
         if (soarianUser != null) {
-            String ipp = req.getParameter("case_id");
-            logger.debug("case_id: " + ipp);
-            SecurityContextHolder.getContext().setAuthentication(createAuthentication(req, soarianUser.toString(), ipp));
             req.getSession().removeAttribute(SOARIAN_USERNAME_ATTRIBUTE);
-            logger.debug("Populated SecurityContextHolder with  token: ");
+            if (ipp != null) {
+                req.getSession().removeAttribute(IPP_ATTRIBUTE);
+                if (studyName != null) {
+                    req.getSession().removeAttribute(STUDY_NAME_ATTRIBUTE);
+
+                    SecurityContextHolder.getContext().setAuthentication(createAuthentication(req, soarianUser.toString(), ipp.toString(), studyName.toString()));
+
+                    logger.debug("Populated SecurityContextHolder with  token: ");
+                } else {
+                    logger.warn("studyName attribute is null, did nothing: ");
+                }
+            } else {
+                logger.warn("ipp attribute is null, did nothing: ");
+            }
         } else {
             logger.debug("Soarian user is null, did nothing: ");
         }
@@ -88,7 +105,7 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
 
     void printAuthentication(Authentication a) {
 
-        logger.debug(">getCredentials(): " + a.getCredentials() + "\n>getDetails(): " + a.getDetails() + "\n>getPrincipal()" + a.getPrincipal());
+        logger.debug("\n>getCredentials(): " + a.getCredentials() + "\n>getDetails(): " + a.getDetails() + "\n>getPrincipal()" + a.getPrincipal());
 
         for (GrantedAuthority at : a.getAuthorities()) {
             logger.debug(">getAuthority(): " + at.getAuthority());
@@ -97,14 +114,14 @@ public class MyAnonymousAuthenticationFilter extends GenericFilterBean implement
     }
     static String NO_PASSWORD = "noPassword";
 
-    protected Authentication createAuthentication(HttpServletRequest request, String soarianUser, String ipp) {
+    protected Authentication createAuthentication(HttpServletRequest request, String soarianUser, String ipp, String studyName) {
         //   (String email, List<String> authorities)
         //  List<String> authorityList = new LinkedList<>();
         //  authorityList.add("cbioportal:ALL");
         //  UserAuthorities authorities = new UserAuthorities(soarianUser, authorityList);
         //    List<GrantedAuthority> grantedAuthorities = AuthorityUtils.createAuthorityList("cbioportal:ALL");
-        String studyName = getStudyName(ipp, ds);
-        logger.debug("studyName=" + studyName);
+        // String studyName = getStudyName(ipp, ds);
+        //  logger.debug("studyName=" + studyName);
         List<GrantedAuthority> grantedAuthorities = AuthorityUtils.createAuthorityList("cbioportal:" + studyName);
         UserDetails user = new User(soarianUser, NO_PASSWORD, grantedAuthorities);
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, NO_PASSWORD, user.getAuthorities());
